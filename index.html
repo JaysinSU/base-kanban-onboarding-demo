@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Base · 看板视图</title>
+  <style>
+    :root { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Helvetica Neue", Arial, sans-serif; color: #2c333b; background: #e8edf5; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; }
+    body { display: grid; place-items: center; overflow: hidden; }
+    button, input { font: inherit; }
+    button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .phone { --header-height: 177px; position: relative; width: 393px; height: 852px; max-width: 100vw; max-height: 100dvh; overflow: hidden; border-radius: 40px; background: #fff; box-shadow: 0 24px 70px rgba(39, 53, 78, .24); isolation: isolate; }
+    .phone.compact { --header-height: 103px; }
+    .icon { display: inline-block; width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .top { position: absolute; top: 0; left: 0; right: 0; height: var(--header-height); background: linear-gradient(116deg,#eaf2fb 0%,#f1f7ff 70%,#edf5ff 100%); transition: height .34s cubic-bezier(.2,.75,.2,1); z-index: 2; }
+    .status { height: 45px; display: flex; align-items: flex-start; justify-content: space-between; padding: 13px 34px 0 52px; color: #080b0d; font-size: 17px; font-weight: 650; letter-spacing: .15px; }
+    .status-right { display: flex; align-items: center; gap: 8px; padding-top: 4px; }
+    .signal { display: flex; align-items: flex-end; gap: 2px; height: 12px; }
+    .signal i { width: 3px; border-radius: 1px; background: #080b0d; }
+    .signal i:nth-child(1){height:4px}.signal i:nth-child(2){height:6px}.signal i:nth-child(3){height:9px}.signal i:nth-child(4){height:12px}
+    .wifi { position: relative; width: 17px; height: 13px; overflow: hidden; }
+    .wifi:before,.wifi:after { content:""; position:absolute; left:50%; transform:translateX(-50%); border:2px solid #080b0d; border-color:#080b0d transparent transparent; border-radius:50%; }
+    .wifi:before { top:0; width:19px; height:18px; }.wifi:after { top:5px; width:10px; height:10px; }
+    .wifi b { position:absolute; left:8px; bottom:0; width:3px; height:3px; border-radius:50%; background:#080b0d; }
+    .battery { width:25px; height:12px; border:1.2px solid #15191c; border-radius:3px; padding:1.5px; position:relative; }
+    .battery:after { content:""; position:absolute; right:-3px; top:3px; width:2px; height:4px; border-radius:0 2px 2px 0; background:#899097; }
+    .battery span { display:block; width:100%; height:100%; background:#080b0d; border-radius:1px; }
+    .top-actions { position:absolute; top:56px; left:16px; right:16px; display:flex; justify-content:space-between; align-items:center; }
+    .actions-right { display:flex; gap:12px; }
+    .round-btn { width:32px; height:32px; border:0; border-radius:50%; display:grid; place-items:center; color:#343c45; background:rgba(210,220,232,.46); padding:0; }
+    .round-btn .icon { width:20px; height:20px; }
+    .round-btn:active, .tool-btn:active { transform:scale(.94); }
+    .title-block { position:absolute; top:113px; left:16px; right:12px; display:flex; gap:12px; align-items:center; min-width:0; opacity:1; transform:translateY(0); transition:opacity .23s, transform .3s; }
+    .app-logo { width:40px; height:40px; border-radius:10px; background:#773cf0; display:grid; place-items:center; flex:none; }
+    .app-logo svg { width:27px; height:27px; fill:#fff; }
+    .title-copy { min-width:0; }
+    .title-copy h1 { margin:0; font-weight:600; font-size:17px; line-height:23px; letter-spacing:.05px; white-space:nowrap; overflow:hidden; text-overflow:clip; }
+    .subtitle { display:flex; align-items:center; gap:5px; color:#626b76; font-size:14px; line-height:20px; white-space:nowrap; }
+    .subtitle .icon { width:16px; height:16px; }
+    .compact-label { position:absolute; top:58px; left:47px; display:flex; align-items:center; gap:5px; height:27px; max-width:230px; padding:0 9px; border-radius:15px; background:rgba(222,230,240,.7); font-size:12px; color:#343b42; opacity:0; transform:translateY(7px); transition:opacity .22s, transform .3s; white-space:nowrap; overflow:hidden; }
+    .compact-label .icon { width:13px; height:13px; }
+    .compact .title-block { opacity:0; transform:translateY(-12px); pointer-events:none; }
+    .compact .compact-label { opacity:1; transform:translateY(0); }
+    .workspace { position:absolute; top:var(--header-height); bottom:0; left:0; right:0; background:linear-gradient(#f6f9ff 0,#fff 104px); border-radius:24px 24px 0 0; border-top:1px solid #fff; transition:top .34s cubic-bezier(.2,.75,.2,1); z-index:3; overflow:hidden; }
+    .views { position:relative; height:60px; display:flex; align-items:flex-start; padding:9px 10px 0; gap:10px; overflow:hidden; white-space:nowrap; }
+    .selected-view { display:flex; align-items:center; flex:none; gap:6px; max-width:284px; height:40px; padding:0 17px; border:0; border-radius:23px; background:#fff; color:#2d343c; font-size:14px; font-weight:550; box-shadow:0 1px 0 rgba(220,225,233,.15); }
+    .selected-view span { overflow:hidden; text-overflow:ellipsis; }
+    .selected-view .icon { width:15px; height:15px; }
+    .next-view { display:flex; align-items:center; gap:5px; padding-top:11px; font-size:14px; color:#a3aab3; }
+    .next-view .icon { width:15px; height:15px; color:#67717c; }
+    .view-menu { position:absolute; right:10px; top:13px; border:0; background:#f8fbff; color:#67717c; width:31px; height:32px; display:grid; place-items:center; padding:0; }
+    .view-menu .icon { width:20px; height:20px; }
+    .toolbar { height:51px; padding:6px 16px 0; display:flex; justify-content:space-between; align-items:flex-start; color:#636d79; }
+    .record-count { display:flex; align-items:center; gap:3px; border:0; background:transparent; padding:3px 0; color:inherit; font-size:12px; }
+    .record-count .icon { width:14px; height:14px; color:#929ba5; }
+    .toolbar-actions { display:flex; gap:17px; align-items:center; padding-top:1px; }
+    .tool-btn { position:relative; border:0; background:transparent; padding:1px; color:#616b76; width:28px; height:28px; display:grid; place-items:center; }
+    .tool-btn .icon { width:20px; height:20px; }
+    .tool-btn.active:after { content:""; position:absolute; right:0; top:0; width:5px; height:5px; border-radius:50%; background:#2e63ed; }
+    .board { position:absolute; left:0; right:0; top:111px; bottom:75px; display:flex; gap:12px; overflow-x:auto; overflow-y:hidden; padding:0 18px; scrollbar-width:none; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y; }
+    .board::-webkit-scrollbar, .cards::-webkit-scrollbar { display:none; }
+    .column { position:relative; flex:0 0 242px; height:100%; min-width:0; }
+    .column-head { height:39px; display:flex; align-items:flex-start; gap:10px; color:#69727c; font-size:14px; padding-top:2px; }
+    .column-name { display:inline-block; max-width:174px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:1px 10px 2px; border-radius:15px; background:#e1e5ea; color:#293039; font-size:16px; font-weight:650; line-height:20px; }
+    .column-count { line-height:25px; }
+    .cards { position:absolute; top:39px; left:0; right:0; bottom:46px; display:flex; flex-direction:column; gap:10px; overflow-y:auto; scrollbar-width:none; overscroll-behavior-y:contain; -webkit-overflow-scrolling:touch; padding-bottom:3px; touch-action:pan-y; }
+    .card { flex:none; min-height:120px; padding:16px 15px 13px; border:1px solid #dce1e7; border-radius:9px; background:#fff; box-shadow:0 0 0 .25px #e1e6ec; overflow:hidden; }
+    .card h2 { margin:0 0 12px; font-size:16px; font-weight:650; line-height:24px; overflow:hidden; white-space:nowrap; text-overflow:clip; }
+    .field { margin:0 0 13px; }
+    .field:last-child { margin-bottom:0; }
+    .field-label { display:flex; align-items:center; gap:5px; font-size:13px; line-height:21px; color:#2f353d; white-space:nowrap; }
+    .field-label .icon { width:16px; height:16px; color:#6b7681; }
+    .field-value { font-size:13px; line-height:22px; padding-left:0; min-height:22px; color:#2d343d; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .date-field { margin-bottom:11px; }
+    .date-field .field-value { padding-top:4px; }
+    .badge { display:inline-block; max-width:100%; border-radius:12px; padding:0 8px; line-height:20px; font-size:13px; font-weight:600; vertical-align:middle; }
+    .badge.critical { background:#fb554e; color:#fff; }.badge.progress { background:#ffe081; }.badge.softred { background:#fac0be; }.badge.softpink { background:#ffdddf; }.badge.green { background:#c6ecc9; }
+    .emoji { font-size:16px; vertical-align:-1px; margin-right:4px; }
+    .summary { margin-bottom:0; }.summary .field-value { margin-top:1px; }
+    .add-record { position:absolute; left:0; right:0; bottom:2px; height:40px; border:1px solid #e0e4ea; border-radius:8px; background:#fff; color:#b3bac3; display:flex; align-items:center; gap:8px; padding:0 13px; text-align:left; font-size:14px; }
+    .add-record .icon { width:16px; height:16px; }
+    .footer { position:absolute; bottom:0; left:0; right:0; z-index:7; height:101px; background:linear-gradient(to bottom,rgba(255,255,255,0),#fff 33%,#fff 100%); pointer-events:none; }
+    .composer { position:absolute; bottom:41px; left:16px; right:16px; display:flex; gap:12px; height:47px; pointer-events:auto; isolation:isolate; }
+    .composer::before { content:""; position:absolute; z-index:0; left:3px; top:-17px; width:calc(100% - 119px); height:45px; border-radius:50%; background:linear-gradient(90deg,rgba(112,221,248,.43),rgba(155,174,250,.36) 52%,rgba(239,167,221,.39)); filter:blur(16px); pointer-events:none; opacity:0; }
+    .prompt-box { position:relative; z-index:1; min-width:0; flex:1; display:flex; align-items:center; gap:9px; border:1px solid #d6dce5; background:#fff; border-radius:26px; padding:0 14px; box-shadow:0 8px 18px rgba(30,43,63,.07); }
+    .prompt-ring-svg { position:absolute; inset:-1px; width:calc(100% + 2px); height:calc(100% + 2px); overflow:visible; pointer-events:none; opacity:0; }
+    .prompt-ring-svg rect { fill:none; stroke:url(#ringGradient); }
+    .prompt-ring-svg .ring-core { stroke-width:1; opacity:.5; }
+    .prompt-ring-svg .ring-glow { stroke-width:5.5; opacity:.42; filter:blur(6.5px); }
+    .onboarding .composer::before { animation:aurora-halo 4.3s ease .25s both; }
+    @keyframes aurora-halo { 0%,100% { opacity:0; transform:scaleX(.86); } 12%,76% { opacity:.72; transform:scaleX(1); } }
+    .spark-replay { position:relative; z-index:1; flex:none; display:grid; place-items:center; width:20px; height:20px; padding:0; border:0; background:transparent; color:#303840; }
+    .spark-replay .icon { width:20px; height:20px; }
+    #prompt { min-width:0; width:100%; border:0; outline:0; background:transparent; color:#626b76; font-size:14px; white-space:nowrap; text-overflow:clip; }
+    #prompt::placeholder { color:#626b76; opacity:1; }
+    .composer-btn { position:relative; z-index:1; flex:none; width:47px; height:47px; display:grid; place-items:center; border:1px solid #d9dfe8; border-radius:50%; background:#fff; color:#303840; box-shadow:0 7px 15px rgba(30,43,63,.055); }
+    .composer-btn .icon { width:27px; height:27px; }
+    .composer-btn.primary { border-color:#2d65ed; background:#2d65ed; color:#fff; box-shadow:0 9px 18px rgba(47,98,230,.18); }
+    .composer-btn.primary .icon { width:26px; height:26px; }
+    .home-bar { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:139px; height:5px; border-radius:5px; background:#000; }
+    .watermarks { position:absolute; z-index:6; inset:0; pointer-events:none; overflow:hidden; color:#718092; opacity:.085; font-size:14px; white-space:nowrap; }
+    .watermarks span { position:absolute; transform:rotate(-18deg); transform-origin:left center; }
+    .watermarks span:nth-child(1){left:-25px;top:366px}.watermarks span:nth-child(2){left:148px;top:354px}.watermarks span:nth-child(3){left:302px;top:457px}.watermarks span:nth-child(4){left:-16px;top:544px}.watermarks span:nth-child(5){left:142px;top:627px}.watermarks span:nth-child(6){left:-14px;top:704px}.watermarks span:nth-child(7){left:277px;top:708px}
+    .toast { position:absolute; left:50%; bottom:112px; transform:translate(-50%,8px); white-space:nowrap; padding:9px 13px; border-radius:13px; background:rgba(35,42,52,.9); color:white; font-size:12px; z-index:12; opacity:0; pointer-events:none; transition:opacity .2s,transform .2s; }
+    .toast.show { opacity:1; transform:translate(-50%,0); }
+    .sheet-backdrop { position:absolute; inset:0; z-index:10; background:rgba(17,25,39,.28); display:none; align-items:flex-end; }
+    .sheet-backdrop.open { display:flex; }
+    .sheet { width:100%; min-height:220px; padding:20px 20px 38px; border-radius:22px 22px 0 0; background:#fff; box-shadow:0 -12px 35px rgba(26,36,55,.1); }
+    .sheet-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-weight:650; font-size:17px; }
+    .close-sheet { border:0; background:#eef2f6; border-radius:50%; width:30px; height:30px; font-size:21px; line-height:25px; color:#5a6370; }
+    .sheet input { width:100%; height:44px; border:1px solid #d8dfe9; border-radius:11px; padding:0 12px; outline:0; font-size:14px; }
+    .sheet input:focus { border-color:#3169ef; }
+    .sheet-action { width:100%; margin-top:13px; height:44px; border:0; border-radius:11px; background:#2f67ed; color:white; font-size:14px; font-weight:600; }
+    @media (max-width: 393px) { .phone { width:100vw; height:100dvh; border-radius:0; box-shadow:none; } }
+    @media (max-height: 852px) and (min-width: 394px) { .phone { height:100dvh; border-radius:30px; } }
+    @media (prefers-reduced-motion: reduce) { .top,.workspace,.title-block,.compact-label { transition:none; } .composer::before,.prompt-ring-svg { display:none; } }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 3-9 9 9 9"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0v5l-2 3h16l-2-3V8ZM9 20h6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h11"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 5h18M3 12h18M3 19h18"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 4 8 8-8 8"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M2 4h20v5l-8 5v7M10 14 2 9V4"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M3 3h11v5M3 3v17h8M8 3v17M14 13l5-3 5 3v7l-5 3-5-3z"/><circle cx="19" cy="16.5" r="1.2"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="1"/><path d="M7 3v4M17 3v4M3 10h18M7 14h.1M12 14h.1M17 14h.1M7 18h.1M12 18h.1"/></symbol>
+    <symbol id="i-formula" viewBox="0 0 24 24"><path d="M15 3c-6-2-7 1-7 5v11c0 2-1 3-4 2M3 14h11M17 16l5 5M22 16l-5 5"/></symbol>
+    <symbol id="i-downcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 10 4 4 4-4"/></symbol>
+    <symbol id="i-text" viewBox="0 0 24 24"><path d="m2 21 7-18 7 18M4 15h10M19 7h4M19 12h4M19 17h4"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2c1.4 6.1 3.9 8.6 10 10-6.1 1.4-8.6 3.9-10 10-1.4-6.1-3.9-8.6-10-10C8.1 10.6 10.6 8.1 12 2Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="7.5"/><path d="m16 16 6 6M7 10.5h7"/></symbol>
+    <symbol id="i-board" viewBox="0 0 24 24"><path d="M3 3h18v7h-6v11H9V10H3zM9 3v7M15 3v7"/></symbol>
+  </svg>
+  <main class="phone" id="phone" aria-label="Base 看板视图交互演示">
+    <header class="top">
+      <div class="status"><span>9:41</span><div class="status-right"><div class="signal"><i></i><i></i><i></i><i></i></div><div class="wifi"><b></b></div><div class="battery"><span></span></div></div></div>
+      <div class="top-actions"><button class="round-btn" aria-label="返回" data-toast="已在当前演示页面"><svg class="icon"><use href="#i-back"/></svg></button><div class="actions-right"><button class="round-btn" aria-label="通知" data-toast="暂无新通知"><svg class="icon"><use href="#i-bell"/></svg></button><button class="round-btn" aria-label="更多" data-toast="更多操作"><svg class="icon"><use href="#i-plus"/></svg></button></div></div>
+      <div class="title-block"><div class="app-logo"><svg viewBox="0 0 40 40"><path d="M20 1 32 13 25 20 13 8ZM39 20 27 32 20 25 32 13ZM20 39 8 27 15 20 27 32ZM1 20 13 8 20 15 8 27Z"/></svg></div><div class="title-copy"><h1>Q1 2023 Planning Requirements List</h1><div class="subtitle"><svg class="icon"><use href="#i-list"/></svg><span>Requirements Task List</span></div></div></div>
+      <div class="compact-label"><svg class="icon"><use href="#i-list"/></svg>Requirements Task List</div>
+    </header>
+    <section class="workspace" aria-label="看板">
+      <div class="views"><button class="selected-view" data-toast="当前为看板视图"><svg class="icon"><use href="#i-board"/></svg><span>Product Q1 Delivery Requirements</span></button><div class="next-view"><svg class="icon"><use href="#i-grid"/></svg><span>切换视图</span></div><button class="view-menu" aria-label="视图菜单" data-toast="Product Q1 Delivery Requirements"><svg class="icon"><use href="#i-menu"/></svg></button></div>
+      <div class="toolbar"><button class="record-count" id="recordCount">31 条记录 <svg class="icon"><use href="#i-chevron"/></svg></button><div class="toolbar-actions"><button class="tool-btn" aria-label="筛选" id="filterBtn"><svg class="icon"><use href="#i-filter"/></svg></button><button class="tool-btn" aria-label="看板设置" data-toast="看板设置"><svg class="icon"><use href="#i-settings"/></svg></button></div></div>
+      <div class="board" id="board" aria-label="可左右滑动的看板"></div>
+    </section>
+    <div class="watermarks" aria-hidden="true"><span>Wenqian Sun 7641</span><span>Wenqian Sun 7641</span><span>Wenqian Sun 7641</span><span>Wenqian Sun 7641</span><span>Wenqian Sun 7641</span><span>Wenqian Sun 7641</span><span>Wenqian Sun 7641</span></div>
+    <footer class="footer"><div class="composer"><div class="prompt-box"><svg class="prompt-ring-svg" id="promptRing" viewBox="0 0 243 47" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="ringGradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9be9f9"/><stop offset="32%" stop-color="#bacafa"/><stop offset="68%" stop-color="#f4badc"/><stop offset="100%" stop-color="#9be9f9"/></linearGradient></defs><rect class="ring-glow" x="1" y="1" width="241" height="45" rx="22.5"/><rect class="ring-core" x="1" y="1" width="241" height="45" rx="22.5"/></svg><button class="spark-replay" id="replayIntro" type="button" aria-label="重播输入框引导动效" title="重播引导动效"><svg class="icon"><use href="#i-spark"/></svg></button><input id="prompt" autocomplete="off" spellcheck="false" aria-label="输入问题" placeholder="哪些任务可能延期？"></div><button class="composer-btn" id="searchBtn" aria-label="搜索"><svg class="icon"><use href="#i-search"/></svg></button><button class="composer-btn primary" id="addBtn" aria-label="添加记录"><svg class="icon"><use href="#i-plus"/></svg></button></div><div class="home-bar"></div></footer>
+    <div class="toast" id="toast" role="status"></div>
+    <div class="sheet-backdrop" id="sheetBackdrop"><div class="sheet"><div class="sheet-header"><span id="sheetTitle">添加记录</span><button class="close-sheet" id="closeSheet" aria-label="关闭">×</button></div><input id="sheetInput" placeholder="输入任务名称"><button class="sheet-action" id="sheetAction">添加到看板</button></div></div>
+  </main>
+  <script>
+    const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+    const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const columns = [
+      { name:'周北北', count:4, cards:[
+        {title:'完成年度财务报告', date:'2025/11/01', delay:'🚨 已延期', priority:'重要紧急', priorityClass:'critical', progress:'进行中', progressClass:'progress', summary:'1. 任务执行人于小宁正在进行年…'},
+        {title:'改善工作环境', delay:'✅ 正常', priority:'紧急不重要', priorityClass:'softred', progress:'待开始', progressClass:'softpink', summary:'优化办公空间与协作流程'},
+        {title:'整理产品需求清单', delay:'✅ 正常', priority:'重要不紧急', priorityClass:'softred', progress:'进行中', progressClass:'progress', summary:'完成需求汇总与评审'},
+        {title:'季度项目复盘', delay:'✅ 正常', priority:'重要紧急', priorityClass:'critical', progress:'待开始', progressClass:'softpink', summary:'整理第一季度项目成果'}
+      ]},
+      { name:'刘贝拉', count:2, cards:[
+        {title:'进行客户满意度调查', delay:'✅ 正常', priority:'紧急不重要', priorityClass:'softred', progress:'待开始', progressClass:'softpink', summary:'1. 刘贝拉正在进行客户…'},
+        {title:'制定新的销售策略', delay:'✅ 正常', priority:'重要紧急', priorityClass:'critical', progress:'进行中', progressClass:'progress', summary:'分析本季度销售数据'}
+      ]},
+      { name:'王小宁', count:5, cards:[
+        {title:'完善交付计划', delay:'✅ 正常', priority:'重要紧急', priorityClass:'critical', progress:'进行中', progressClass:'progress', summary:'确定各阶段交付时间'},
+        {title:'跟进设计评审', delay:'✅ 正常', priority:'重要不紧急', priorityClass:'softred', progress:'待开始', progressClass:'softpink', summary:'汇总设计反馈'},
+        {title:'更新项目文档', delay:'✅ 正常', priority:'紧急不重要', priorityClass:'softred', progress:'进行中', progressClass:'progress', summary:'同步最新进展'},
+        {title:'整理用户反馈', delay:'✅ 正常', priority:'重要不紧急', priorityClass:'softred', progress:'待开始', progressClass:'softpink', summary:'归纳常见问题'},
+        {title:'准备周会材料', delay:'✅ 正常', priority:'重要紧急', priorityClass:'critical', progress:'进行中', progressClass:'progress', summary:'汇报本周工作'}
+      ]},
+      { name:'陈晨', count:4, cards:[
+        {title:'优化产品体验', delay:'✅ 正常', priority:'重要紧急', priorityClass:'critical', progress:'进行中', progressClass:'progress', summary:'改进关键流程'},
+        {title:'检查测试结果', delay:'✅ 正常', priority:'重要不紧急', priorityClass:'softred', progress:'待开始', progressClass:'softpink', summary:'处理测试反馈'},
+        {title:'梳理功能说明', delay:'✅ 正常', priority:'紧急不重要', priorityClass:'softred', progress:'进行中', progressClass:'progress', summary:'完善说明文档'},
+        {title:'完成数据分析', delay:'✅ 正常', priority:'重要紧急', priorityClass:'critical', progress:'待开始', progressClass:'softpink', summary:'形成分析报告'}
+      ]},
+      { name:'林悦', count:4, cards:[] }, { name:'张明', count:4, cards:[] }, { name:'李可', count:4, cards:[] }, { name:'赵岩', count:4, cards:[] }
+    ];
+    const extraTitles = ['确认交付范围','组织跨部门沟通','完善流程规范','准备阶段报告'];
+    columns.slice(4).forEach((column, group) => {
+      column.cards = extraTitles.map((title, i) => ({title: i === 0 ? title : `${title}`, delay:'✅ 正常', priority: i % 2 ? '重要不紧急':'重要紧急', priorityClass:i % 2 ? 'softred':'critical', progress:i % 2 ? '待开始':'进行中', progressClass:i % 2 ? 'softpink':'progress', summary:`第 ${group+1} 组任务正在推进中`}));
+    });
+    const renderField = (symbol, label, value, cls='', extra='') => `<div class="field ${extra}"><div class="field-label">${icon(symbol)}<span>${label}</span></div><div class="field-value">${cls ? `<span class="badge ${cls}">${esc(value)}</span>` : esc(value)}</div></div>`;
+    function renderCard(card) {
+      return `<article class="card"><h2>${esc(card.title)}</h2>${card.date ? renderField('calendar','预计完成日期',card.date,'','date-field') : ''}${renderField('formula','是否延期',card.delay)}${renderField('downcircle','重要紧急程度',card.priority,card.priorityClass)}${renderField('downcircle','进展',card.progress,card.progressClass)}${renderField('text','任务情况总结',card.summary,'','summary')}</article>`;
+    }
+    function renderBoard() {
+      document.getElementById('board').innerHTML = columns.map((column, index) => `<section class="column" data-column="${index}" aria-label="${esc(column.name)}的记录"><div class="column-head"><span class="column-name">${esc(column.name)}</span><span class="column-count">${column.count}</span></div><div class="cards">${column.cards.map(renderCard).join('')}</div><button class="add-record" data-add="${index}">${icon('plus')}添加记录</button></section>`).join('');
+      document.querySelectorAll('.cards').forEach(el => el.addEventListener('scroll', () => {
+        document.getElementById('phone').classList.toggle('compact', el.scrollTop > 30);
+      }, {passive:true}));
+      document.querySelectorAll('[data-add]').forEach(el => el.addEventListener('click', () => openSheet(Number(el.dataset.add))));
+    }
+    renderBoard();
+    const phone = document.getElementById('phone');
+    const board = document.getElementById('board');
+    board.tabIndex=0;
+    board.addEventListener('keydown', e => { if(e.key==='ArrowRight'||e.key==='ArrowLeft') { board.scrollBy({left:e.key==='ArrowRight'?250:-250,behavior:'smooth'}); e.preventDefault(); } });
+    let mouseDrag=null;
+    board.addEventListener('pointerdown', e => { if(e.pointerType==='mouse' && e.button===0 && !e.target.closest('button')) mouseDrag={x:e.clientX,left:board.scrollLeft,active:false}; });
+    board.addEventListener('pointermove', e => { if(!mouseDrag) return; const dx=e.clientX-mouseDrag.x; if(Math.abs(dx)>4) { mouseDrag.active=true; board.scrollLeft=mouseDrag.left-dx; board.style.cursor='grabbing'; } });
+    window.addEventListener('pointerup', () => { mouseDrag=null; board.style.cursor=''; });
+    let touchStart = null;
+    board.addEventListener('touchstart', e => { touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY}; }, {passive:true});
+    board.addEventListener('touchmove', e => {
+      if (!touchStart) return;
+      const dx=Math.abs(e.touches[0].clientX-touchStart.x), dy=Math.abs(e.touches[0].clientY-touchStart.y);
+      if (dy > dx + 8 && e.target.closest('.column-head')) {
+        const col=e.target.closest('.column'); if(col) col.querySelector('.cards').scrollTop += touchStart.y-e.touches[0].clientY;
+        touchStart.y=e.touches[0].clientY;
+      }
+    }, {passive:true});
+    board.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaY) >= Math.abs(e.deltaX) && e.target.closest('.column-head')) e.target.closest('.column').querySelector('.cards').scrollTop += e.deltaY;
+    }, {passive:true});
+    const prompt = document.getElementById('prompt');
+    const phrases = ['哪些任务可能延期？','总结本周交付进展','找出优先级最高的任务','周北北负责哪些任务？'];
+    const FULL_TEXT_PAUSE=5500, TYPE_DELAY=72, ERASE_DELAY=38, BETWEEN_PHRASES=330;
+    const INTRO_TOTAL=4550, RING_DELAY=250, RING_DURATION=3800;
+    const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ring=document.getElementById('promptRing');
+    const ringGradient=document.getElementById('ringGradient');
+    let phraseIndex=0, charIndex=phrases[0].length, deleting=true, typing=!reduceMotion, timer, introTimer, introFrame, pendingIntro=false;
+    function resetPrompt() { phraseIndex=0; charIndex=phrases[0].length; deleting=true; prompt.placeholder=phrases[0]; }
+    function stopIntro() { clearTimeout(introTimer); cancelAnimationFrame(introFrame); ring.style.opacity='0'; phone.classList.remove('onboarding'); }
+    function animateRing(now, startedAt) {
+      const elapsed=now-startedAt-RING_DELAY;
+      if (elapsed < 0) { introFrame=requestAnimationFrame(next => animateRing(next,startedAt)); return; }
+      const progress=Math.min(elapsed/RING_DURATION,1);
+      ringGradient.setAttribute('gradientTransform',`rotate(${(progress*720).toFixed(2)} .5 .5)`);
+      const fade=Math.max(0,Math.min(1,progress/.08,(1-progress)/.1));
+      ring.style.opacity=String(.82*fade);
+      if (progress < 1) introFrame=requestAnimationFrame(next => animateRing(next,startedAt));
+      else ring.style.opacity='0';
+    }
+    function playIntro() {
+      if (reduceMotion || prompt.value) return;
+      if (document.hidden) { pendingIntro=true; return; }
+      pendingIntro=false;
+      typing=false; clearTimeout(timer); resetPrompt(); stopIntro();
+      phone.classList.add('onboarding');
+      const startedAt=performance.now();
+      introFrame=requestAnimationFrame(now => animateRing(now,startedAt));
+      introTimer=setTimeout(() => {
+        phone.classList.remove('onboarding');
+        if (document.activeElement !== prompt && !prompt.value) {
+          typing=true;
+          timer=setTimeout(typeStep,FULL_TEXT_PAUSE-INTRO_TOTAL);
+        }
+      },INTRO_TOTAL);
+    }
+    function typeStep() {
+      if (!typing) return;
+      const phrase=phrases[phraseIndex];
+      if (deleting) {
+        charIndex--; prompt.placeholder=phrase.slice(0,Math.max(charIndex,0));
+        if (charIndex <= 0) { deleting=false; phraseIndex=(phraseIndex+1)%phrases.length; timer=setTimeout(typeStep,BETWEEN_PHRASES); }
+        else timer=setTimeout(typeStep,ERASE_DELAY);
+      } else {
+        const next=phrases[phraseIndex]; charIndex++;
+        prompt.placeholder=next.slice(0,charIndex);
+        if (charIndex >= next.length) { deleting=true; timer=setTimeout(typeStep,FULL_TEXT_PAUSE); }
+        else timer=setTimeout(typeStep,TYPE_DELAY);
+      }
+    }
+    if (!reduceMotion) playIntro();
+    window.addEventListener('pageshow', e => { if (e.persisted) playIntro(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && phone.classList.contains('onboarding')) { stopIntro(); pendingIntro=true; }
+      else if (!document.hidden && pendingIntro) { pendingIntro=false; if (document.activeElement !== prompt && !prompt.value) playIntro(); }
+    });
+    document.querySelector('.prompt-box').addEventListener('click', e => { if (!e.target.closest('#replayIntro')) prompt.focus(); });
+    document.getElementById('replayIntro').addEventListener('click', () => { if (prompt.value) { prompt.focus(); return; } prompt.blur(); playIntro(); });
+    prompt.addEventListener('focus', () => { pendingIntro=false; typing=false; clearTimeout(timer); stopIntro(); prompt.placeholder='询问这张表…'; });
+    prompt.addEventListener('blur', () => { if(!prompt.value) { typing=!reduceMotion; resetPrompt(); if(!reduceMotion) timer=setTimeout(typeStep,FULL_TEXT_PAUSE); } });
+    prompt.addEventListener('keydown', e => { if(e.key==='Enter' && prompt.value.trim()) { showToast(`已输入：${prompt.value.trim()}`); prompt.value=''; prompt.blur(); } });
+    let toastTimer;
+    function showToast(message) { const el=document.getElementById('toast'); el.textContent=message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),2100); }
+    document.querySelectorAll('[data-toast]').forEach(el => el.addEventListener('click', () => showToast(el.dataset.toast)));
+    document.getElementById('recordCount').addEventListener('click', () => showToast(document.getElementById('recordCount').textContent.trim()));
+    document.getElementById('filterBtn').addEventListener('click', e => { e.currentTarget.classList.toggle('active'); showToast(e.currentTarget.classList.contains('active') ? '筛选已开启' : '筛选已关闭'); });
+    document.getElementById('searchBtn').addEventListener('click', () => { prompt.focus(); showToast('输入内容即可搜索'); });
+    let selectedColumn=0;
+    const backdrop=document.getElementById('sheetBackdrop');
+    function openSheet(column=0) { selectedColumn=column; backdrop.classList.add('open'); document.getElementById('sheetTitle').textContent=`添加记录 · ${columns[column].name}`; const input=document.getElementById('sheetInput'); input.value=''; setTimeout(()=>input.focus(),80); }
+    function closeSheet() { backdrop.classList.remove('open'); document.getElementById('sheetInput').blur(); }
+    document.getElementById('addBtn').addEventListener('click', () => openSheet(0));
+    document.getElementById('closeSheet').addEventListener('click', closeSheet);
+    backdrop.addEventListener('click', e => { if(e.target===backdrop) closeSheet(); });
+    function addRecord() { const input=document.getElementById('sheetInput'); const title=input.value.trim(); if(!title) {input.focus();return;} const column=columns[selectedColumn]; column.cards.push({title,delay:'✅ 正常',priority:'重要不紧急',priorityClass:'softred',progress:'待开始',progressClass:'softpink',summary:'新建任务'}); column.count++; const previousX=board.scrollLeft; renderBoard(); board.scrollLeft=previousX; document.getElementById('recordCount').firstChild.textContent=`${columns.reduce((sum,c)=>sum+c.count,0)} 条记录 `; closeSheet(); showToast('记录已添加'); }
+    document.getElementById('sheetAction').addEventListener('click',addRecord);
+    document.getElementById('sheetInput').addEventListener('keydown',e=>{if(e.key==='Enter') addRecord();});
+  </script>
+</body>
+</html>
